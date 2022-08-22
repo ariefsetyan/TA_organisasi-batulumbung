@@ -26,9 +26,9 @@ class KegiatanController extends Controller
 	{
         $organisasi = Organisasi::all();
         $kegiatan = Kegiatan::latest()->filter(request(['cariKegiatan', 'jenis']))->paginate(10)->withQueryString();
-       
+
 		return view('pengurus/kegiatan/kegiatan', compact(['organisasi', 'kegiatan']));
- 
+
     }
 
     public function filterTanggal(Request $request)
@@ -47,7 +47,7 @@ class KegiatanController extends Controller
         if($request->sampai == ''){
             return redirect()->back()->withInput()->with('status', 'Tanggal akhir filter harus diisi');
         }
-        
+
         if($request->dari > $request->sampai){
             return redirect()->back()->withInput()->with('status', 'Tanggal awal tidak boleh lebih dari tanggal akhir filter');
         }
@@ -76,12 +76,24 @@ class KegiatanController extends Controller
             'image'         => 'image|file|mimes:jpg,jpeg,png|max:1024'
         ]);
 
-        if($request->file('image')) {
-            $validateData['image'] = $request->file('image')->store('images-kegiatan');
-        }
+//        if($request->file('image')) {
+//
+////            $validateData['image'] = $request->file('image')->public_path('images');
+//        }
 
+        $imageName = time().'.'.$request->image->extension();
+        $request->image->move(public_path('images'), $imageName);
+        $validateData = array(
+            "nama_kegiatan" => "manajemen resiko",
+            "tanggal" => "2022-06-04",
+            "waktu" => "20:12",
+            "tempat" => "gresik",
+            "organisasi_id" => "1",
+            "deskripsi" => "<p>sada</p>",
+            "image"=>$imageName
+        );
         Kegiatan::create($validateData);
-        
+
         return redirect('/kegiatan/kegiatan')-> with('success', 'Data Kegiatan Berhasil Ditambahkan!');
     }
 
@@ -92,12 +104,11 @@ class KegiatanController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function show(Kegiatan $kegiatan)
-    {   
-        // dd($kegiatan);
-       
+    {
+
     //    $kegiatan = Kegiatan::find($id);
     //    $kegiatan = Kegiatan::all();
-       
+
         return view('pengurus.kegiatan.show-kegiatan', compact('kegiatan'));
 
     }
@@ -120,13 +131,13 @@ class KegiatanController extends Controller
             'deskripsi'     => 'required',
             'image'         => 'required|file|mimes:jpg,jpeg,png|max:1024'
         ]);
-        
+
         // dd($request->file('image'));
         // if($request->file('image')){
         //     if($request->oldImage) {
         //         Storage::delete($request->oldImage);
         //         }
-        //     $validateData['image'] = $request->file('image')->store('images-kegiatan');  
+//             $validateData['image'] = $request->file('image')->store('images-kegiatan');
         // }
         $imageName = time().'.'.$request->image->extension();
         $request->image->move(public_path('images'), $imageName);
@@ -135,10 +146,10 @@ class KegiatanController extends Controller
         foreach ($img_old as $value) {
             unlink("images/".$value->image);
         }
-        
+
 
         Kegiatan::where('id', $kegiatan->id)
-                ->update([ 
+                ->update([
                     'nama_kegiatan' =>$request->nama_kegiatan,
                     'tanggal'       =>$request->tanggal,
                     'waktu'         =>$request->waktu,
@@ -153,12 +164,12 @@ class KegiatanController extends Controller
 
     public function exportPDF(Request $request, $id) {
         $data = Kegiatan::Where('id', $id)->firstOrFail();
-        
+
         // dd($data->nama_kegiatan);
         // dd($data);
 
         $pdf = PDF::loadview('pengurus/kegiatan/kegiatan_pdf', compact('data'));
-               
+
         return $pdf->stream('laporan-kegiatan.pdf');
     }
 
@@ -183,7 +194,7 @@ class KegiatanController extends Controller
     {
         $kegiatan = Kegiatan::paginate(10);
         return view('anggota/kegiatan', [
-            "kegiatan" => "All Kegiatan", 
+            "kegiatan" => "All Kegiatan",
             "kegiatan"=> Kegiatan::latest()->get()
         ]);
     }
@@ -191,10 +202,10 @@ class KegiatanController extends Controller
     public function cariKegiatanAnggota(Request $request)
 	{
 		return view('anggota/kegiatan', [
-            "active" => "kegiatan", 
+            "active" => "kegiatan",
             "kegiatan" => Kegiatan::latest()->filter(request(['cari']))->paginate(10)->withQueryString()
         ]);
- 
+
     }
 
 }
